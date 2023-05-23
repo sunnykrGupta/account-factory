@@ -28,7 +28,8 @@ import argparse
 import os
 import urllib
 import json
-from botocore.vendored import requests
+#from botocore.vendored import requests
+import requests
 
 '''AWS Organizations Create Account and Provision Resources via CloudFormation
 
