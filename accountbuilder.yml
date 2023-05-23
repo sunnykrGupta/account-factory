@@ -36,6 +36,7 @@ Metadata:
           - baselinetemplate
           - newrole
           - newrolepolicy
+          - trustEntityAwsId
       - Label:
           default: Region Configuration
         Parameters:
@@ -88,6 +89,12 @@ Parameters:
   newrolepolicy:
     Description: "Provide the policy to be attached to the above newrole. Json is only the valid format."
     Default : '{"Version":"2012-10-17","Statement":{"Effect":"Allow","Action":"*","Resource":"*"}}'
+    Type: String
+    AllowedPattern: ".+"
+
+  trustEntityAwsId:
+    Description: "Provide the AWS ID to be attached to the newrole as trust entities. You can add multiple ID using comma (,) separated values."
+    Default : '803022518328,207618842124'
     Type: String
     AllowedPattern: ".+"
 
@@ -195,7 +202,7 @@ Resources:
     Properties:
       Handler: "AccountCreationLambda.main"
       #Handler: "index.main"
-      Runtime: "python3.6"
+      Runtime: "python3.10"
       Role: !GetAtt LambdaExecuteRole.Arn
       Timeout: 600
       TracingConfig:
@@ -208,6 +215,7 @@ Resources:
           'accountemail' : !Ref accountemail
           'accountname' : !Ref accountname
           'newrolepolicy': !Ref newrolepolicy
+          'trustEntityAwsId': !Ref trustEntityAwsId
           'newrole': !Ref 'newrole'
           'organizationunitname': !Ref 'organizationunitname'
           'stackname' : !Ref stackname

@@ -349,11 +349,16 @@ def get_ou_name_id(root_id,organization_unit_name):
     
     return(organization_unit_name,organization_unit_id)
 
-def create_newrole(newrole,top_level_account,credentials,newrolepolicy):
+def create_newrole(newrole,top_level_account,credentials,newrolepolicy, trustEntityAwsId):
     iam_client = boto3.client('iam',aws_access_key_id=credentials['AccessKeyId'],
                                   aws_secret_access_key=credentials['SecretAccessKey'],
                                   aws_session_token=credentials['SessionToken'])
-    print("arn:aws:iam::"+top_level_account+":root")
+    # Array to contain all account entities
+    root = "arn:aws:iam::"+top_level_account+":root"
+    trustEntityArray = [root] 
+    for Id in trustEntityAwsId.split(','):
+        trustEntityArray.append("arn:aws:iam::{}:root".format(Id))
+
     trust_policy_document = json.dumps( 
                                         {
                                           "Version": "2012-10-17",
@@ -361,7 +366,7 @@ def create_newrole(newrole,top_level_account,credentials,newrolepolicy):
                                             {
                                               "Effect": "Allow",
                                               "Principal": {
-                                                "AWS": "arn:aws:iam::"+top_level_account+":root"
+                                                "AWS": trustEntityArray
                                               },
                                               "Action": "sts:AssumeRole"
                                             }
@@ -369,7 +374,6 @@ def create_newrole(newrole,top_level_account,credentials,newrolepolicy):
                                         } 
                                     )
     print(trust_policy_document)
-    #new_role_policy = json.dumps(newrolepolicy)
     print(newrolepolicy)
     try:
         create_role_response = iam_client.create_role(RoleName=newrole,AssumeRolePolicyDocument=trust_policy_document,Description=newrole,MaxSessionDuration=3600)
@@ -435,6 +439,7 @@ def main(event,context):
     accountemail = os.environ['accountemail']
     newrole = os.environ['newrole']
     newrolepolicy = os.environ['newrolepolicy']
+    trustEntityAwsId = os.environ['trustEntityAwsId']
     organization_unit_name = os.environ['organizationunitname']
     accountrole = 'OrganizationAccountAccessRole'
     stackname = os.environ['stackname']
@@ -524,7 +529,7 @@ def main(event,context):
             except botocore.exceptions.ClientError as e:
                 print("There might be an error creating the custom VPC. Error : {}".format(e))
             try:
-                newrole_arn = create_newrole(newrole,top_level_account,credentials,newrolepolicy)
+                newrole_arn = create_newrole(newrole,top_level_account,credentials,newrolepolicy, trustEntityAwsId)
             except botocore.exceptions.ClientError as e:
                 print("Error creating the specified role. Error : {}".format(e))
                 newrole_arn = "arn:aws:iam::"+account_id+":role/"+newrole
